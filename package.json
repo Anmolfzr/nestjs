@@ -24,6 +24,7 @@
     "@nestjs/common": "^8.0.0",
     "@nestjs/core": "^8.0.0",
     "@nestjs/platform-express": "^8.0.0",
+    "@nestjs/swagger": "^6.1.4",
     "@types/uuid": "^8.3.4",
     "cache-manager": "^5.1.4",
     "class-transformer": "^0.5.1",

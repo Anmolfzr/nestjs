@@ -40,7 +40,7 @@ export class ProductService {
       );
       if (filteredProductData) {
         return filteredProductData;
-      } else {
+      } else { // change
         throw new NotFoundException();
       }
     } catch {
