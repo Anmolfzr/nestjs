@@ -1,7 +1,7 @@
 import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
 import { ProductResponseDto } from 'src/dtos/product.dto';
-import { productData } from 'src/mockdata/products-data';
+import { productData } from 'src/mocks/products';
 
 interface Product {
   price: number;
@@ -26,10 +26,10 @@ export class ProductService {
       if (products) {
         return products;
       } else {
-        throw new NotFoundException();
+        throw new NotFoundException('Products not found');
       }
-    } catch {
-      throw new HttpException('Internal Server Error', 400);
+    } catch (error) {
+      this.filterError(error.response);
     }
   }
 
@@ -38,51 +38,88 @@ export class ProductService {
       const filteredProductData = productData.filter((product) =>
         ids.includes(product.id),
       );
-      if (filteredProductData) {
+      if (filteredProductData.length === ids.length) {
         return filteredProductData;
-      } else { // change
-        throw new NotFoundException();
+      } else {
+        throw new NotFoundException('One of the product Ids is not found');
       }
-    } catch {
-      throw new HttpException('Internal Server Error', 400);
+    } catch (error) {
+      this.filterError(error.response);
     }
   }
 
   getProductById(id: string): ProductResponseDto {
     try {
-      const findProduct = productData.find((product) => product.id === id);
-      const product = new ProductResponseDto(findProduct);
-      if (product) {
+      const productIndex = productData.findIndex(
+        (product) => product.id === id,
+      );
+      if (productIndex !== -1) {
+        const product = new ProductResponseDto(productData[productIndex]);
         return product;
       } else {
-        throw new NotFoundException();
+        throw new NotFoundException('Product Id is not found');
       }
-    } catch {
-      throw new HttpException('Internal Server Error', 400);
+    } catch (error) {
+      this.filterError(error.response);
     }
   }
 
-  upsertProduct(data, isDeleted): ProductResponseDto {
+  softDeleteByIds(productIds) {
     try {
-      if (data.id) {
-        const productIndex = productData.findIndex(
-          (product) => product.id === data.id,
-        );
-        if (productIndex !== -1) {
-          const updateProduct = this.updateProduct(
-            productIndex,
-            data,
-            isDeleted,
+      productIds.forEach((id) => {
+        if (id) {
+          const productIndex = productData.findIndex(
+            (product) => product.id === id,
           );
-          return updateProduct;
+          if (productIndex !== -1) {
+            productData[productIndex]['isDeleted'] = true;
+            productData[productIndex] = {
+              ...productData[productIndex],
+              updated_at: new Date(),
+            };
+            const response = {
+              statusCode: 200,
+              message: 'Products Soft deleted successfully',
+            };
+            return response;
+          } else {
+            throw new NotFoundException('One of the product Ids is not found');
+          }
         }
-      } else if (data.price && data.name) {
-        return this.createProduct(data);
-      } else {
-        throw new NotFoundException();
-      }
+      });
     } catch (error) {
-      throw new HttpException('Internal Server Error', 400);
+      this.filterError(error.response);
+    }
+  }
+
+  upsertProduct(products, isDeleted): ProductResponseDto[] {
+    try {
+      let result = [];
+      products.forEach((data) => {
+        if (data.id) {
+          const productIndex = productData.findIndex(
+            (product) => product.id === data.id,
+          );
+          if (productIndex !== -1) {
+            let updateProduct = this.updateProduct(
+              productIndex,
+              data,
+              isDeleted,
+            );
+            result.push(updateProduct);
+          } else {
+            throw new NotFoundException('One of the product Ids is not found');
+          }
+        } else if (data.price && data.name) {
+          let createProduct = this.createProduct(data);
+          result.push(createProduct);
+        } else {
+          throw new NotFoundException('Missing mandatory fields');
+        }
+      });
+      return result;
+    } catch (error) {
+      this.filterError(error.response);
     }
   }
 
@@ -114,5 +151,15 @@ export class ProductService {
       updated_at: new Date(),
     };
     return newProduct;
+  }
+
+  filterError(error) {
+    console.log(error);
+    
+    if (error?.statusCode === 404) {
+      throw new NotFoundException(error.message);
+    } else {
+      throw new HttpException('Internal Server Error', 400);
+    }
   }
 }

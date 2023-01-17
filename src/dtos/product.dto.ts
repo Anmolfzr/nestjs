@@ -11,6 +11,7 @@ import { Exclude, Expose } from 'class-transformer';
 export class CreateProductDto {
   @IsNumber()
   @IsPositive()
+  @IsNotEmpty()
   price: number;
 
   @IsString()
@@ -22,12 +23,17 @@ export class UpdateProductDto {
   @IsOptional()
   @IsNumber()
   @IsPositive()
+  @IsNotEmpty()
   price: number;
 
   @IsOptional()
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  id: string;
 }
 
 export class virtualDeleteProductDto {

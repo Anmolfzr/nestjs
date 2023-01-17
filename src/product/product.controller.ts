@@ -26,40 +26,43 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 
-@Controller('product')
+@Controller('products')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
-  @ApiOperation({ description: 'sammy side' })
-  /// Response Documentation
+
+  @ApiOperation({ description: 'Returns all the products' })
+
   @ApiOkResponse({
     description: 'Success Response',
     schema: {
       example: [
         {
           id: 'c520361a-8e76-4564-b0eb-737246fd922b',
-          name: 'puma',
-          price: 7500,
+          name: 'Chevrolet',
+          price: 75000,
           isDeleted: false,
         },
         {
           id: 'aa50e9ae-246b-4955-8fa9-17218a5db945',
-          name: 'adidas',
-          price: 2500,
-          isDeleted: true,
+          name: 'Audi',
+          price: 25000,
+          isDeleted: false,
         },
       ],
     },
   })
-  // testing
-  @ApiResponse({
-    description: 'Unauthorized Request',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'Unauthorized',
-      },
-    },
-  })
+
+  
+  // // testing
+  // @ApiResponse({
+  //   description: 'Unauthorized Request',
+  //   schema: {
+  //     example: {
+  //       statusCode: 401,
+  //       message: 'Unauthorized',
+  //     },
+  //   },
+  // })
   @ApiResponse({
     description: 'Internal server error',
     schema: {
@@ -76,14 +79,16 @@ export class ProductController {
     return this.productService.getAllProducts();
   }
 
-  @ApiOperation({ description: 'sammy side idsss' })
+  //=======================================
+
+  @ApiOperation({ description: 'Accepts an array of productsIds and returns the array of products' })
   @ApiQuery({
     name: 'ids',
-    description: 'collection of uuids. separated by comma,',
+    description: 'Array of productIds',
     type: 'string[]',
     required: true,
     example: {
-      url: 'localhost:3000/product?ids=30577a01-f7ad-4fb2-b29e-da5004e3a92f,9cde6cb5-f14f-4966-875c-6801e09c0b8e',
+      url: 'http://localhost:3000/products/specifiedIds?ids=c520361a-8e76-4564-b0eb-737246fd922b',
     },
   })
   @ApiOkResponse({
@@ -106,26 +111,15 @@ export class ProductController {
     },
   })
   // testing
-  @ApiResponse({
-    description: 'Unauthorized Request',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'Unauthorized',
-      },
-    },
-  })
-  @ApiResponse({
-    description: 'Internal server error',
-    schema: {
-      example: [
-        {
-          statusCode: 500,
-          message: 'Internal Server Error',
-        },
-      ],
-    },
-  })
+  // @ApiResponse({
+  //   description: 'Unauthorized Request',
+  //   schema: {
+  //     example: {
+  //       statusCode: 401,
+  //       message: 'Unauthorized',
+  //     },
+  //   },
+  // })
   @ApiResponse({
     description: 'Internal server error',
     schema: {
@@ -137,38 +131,89 @@ export class ProductController {
       ],
     },
   })
-  @Get()
-  findByIds(
+
+  @Get('specifiedIds')
+  productsDetailsByIds(
     @Query('ids', new ParseArrayPipe({ items: String, separator: ',' }))
     ids: string[],
   ) {
     return this.productService.getProductsByIds(ids);
   }
 
+//=======================================
+
+  @ApiOperation({ description: 'Returns details of specified product Id' })
+  @ApiParam({
+    name: 'id',
+    description: 'productId',
+    type: 'string',
+    required: true,
+    example: {
+      url: 'http://localhost:3000/products/c520361a-8e76-4564-b0eb-737246fd922b',
+    },
+  })
+  @ApiOkResponse({
+    description: 'Success Response',
+    schema: {
+      example: 
+        {
+          id: 'c520361a-8e76-4564-b0eb-737246fd922b',
+          name: 'puma',
+          price: 7500,
+          isDeleted: false,
+        },
+    },
+  })
+  // testing
+  // @ApiResponse({
+  //   description: 'Unauthorized Request',
+  //   schema: {
+  //     example: {
+  //       statusCode: 401,
+  //       message: 'Unauthorized',
+  //     },
+  //   },
+  // })
+  @ApiResponse({
+    description: 'Internal server error',
+    schema: {
+      example: [
+        {
+          statusCode: 500,
+          message: 'Internal Server Error',
+        },
+      ],
+    },
+  })
+
   @Get(':id')
   getProductById(@Param('id', ParseUUIDPipe) id: string): ProductResponseDto {
     return this.productService.getProductById(id);
   }
 
-  @ApiOperation({ description: 'sammy side' })
+//=======================================
+
+  @ApiOperation(
+    { description: 'Accepts an array of productsIds (including productId, name, price) and for each product, if it exists, updates the value and if doesnt exist inserts the product. If product already virtually deleted please restore and overwrite it' }
+  )
   @ApiBody({
     type: UpdateProductDto,
     description:
-      'The Description for the Post Body. Please look into the DTO. You will see the @ApiOptionalProperty used to define the Schema.',
+      'There are two request body, one is for Create Product and other is for update Product',
     examples: {
       a: {
         summary: 'Create Product',
-        description: 'Description for when an create body is used',
-        value: { name: 'test', price: 1000 } as CreateProductDto,
+        description: 'For create product, name and price parameters will be send',
+        value: [{ name: 'test', price: 1000 }] as CreateProductDto[],
       },
       b: {
         summary: 'Update Product',
-        description: 'update description',
-        value: {
+        description: 'For update product, name, price and id',
+        value: [{
           name: 'test',
           price: 1000,
           id: 'fa0259ab-f2c0-4bfa-806b-a9179eb51962',
-        } as UpdateProductDto,
+        }] as UpdateProductDto[],
       },
     },
   })
@@ -194,22 +239,22 @@ export class ProductController {
       },
     },
   })
+  // @ApiResponse({
+  //   description: 'Unauthorized Request',
+  //   schema: {
+  //     example: {
+  //       statusCode: 401,
+  //       message: 'Unauthorized',
+  //     },
+  //   },
+  // })
   @ApiResponse({
-    description: 'Unauthorized Request',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'Unauthorized',
-      },
-    },
-  })
-  @ApiResponse({
-    description: 'One can also provided a Status-Code directly, as seen here',
+    description: 'Internal Server Error',
     schema: {
       example: {
         statusCode: 500,
-        message: 'APPLICATION_ERROR',
-        error: 'Application Error',
+        message: 'Internal Server Error',
+        error: 'Internal Server Error',
       },
     },
   })
@@ -218,14 +263,52 @@ export class ProductController {
     return this.productService.upsertProduct(body, false);
   }
 
-  
-  @Put('delete/:id')
-  softDeleteProduct(
-    @Param('id', ParseUUIDPipe) id: string,
-    body = { id },
-  ): ProductResponseDto {
-    if (id) {
-      return this.productService.upsertProduct(body, true);
-    }
+//==================================
+
+  @ApiOperation({ description: 'Accepts an array of productsIds and soft deletes the array of product Ids' })
+  @ApiQuery({
+    name: 'ids',
+    description: 'Array of productIds',
+    type: 'string[]',
+    required: true,
+    example: {
+      url: 'http://localhost:3000/products/delete?ids=c520361a-8e76-4564-b0eb-737246fd922b',
+    },
+  })
+  @ApiOkResponse({
+    description: 'Success Response',
+    schema: {
+      example: 
+           { statusCode: 200, message: 'Products Soft deleted successfully' }
+    },
+  })
+  // // testing
+  // // @ApiResponse({
+  // //   description: 'Unauthorized Request',
+  // //   schema: {
+  // //     example: {
+  // //       statusCode: 401,
+  // //       message: 'Unauthorized',
+  // //     },
+  // //   },
+  // // })
+  @ApiResponse({
+    description: 'Internal server error',
+    schema: {
+      example: [
+        {
+          statusCode: 500,
+          message: 'Internal Server Error',
+        },
+      ],
+    },
+  })
+
+  @Put('delete')
+  softDeleteByIds(
+    @Query('ids', new ParseArrayPipe({ items: String, separator: ',' }))
+    ids: string[],
+  ) {
+    return this.productService.softDeleteByIds(ids);
   }
 }
